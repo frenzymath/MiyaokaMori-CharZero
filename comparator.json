@@ -1,0 +1,21 @@
+{
+    "challenge_module": "Challenge",
+    "solution_module": "Solution",
+    "theorem_names": [
+        "miyaoka_mori",
+        "harmonic_intersection",
+        "negative_horizontal",
+        "affine_lift_after_base_change",
+        "inverse_tautological_class",
+        "realization_coefficients",
+        "realization",
+        "prescribed_point_specialization",
+        "degree_identity"
+    ],
+    "permitted_axioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+    ],
+    "enable_nanoda": false
+}

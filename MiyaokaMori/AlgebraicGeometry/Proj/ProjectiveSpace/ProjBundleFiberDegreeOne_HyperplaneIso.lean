@@ -1,0 +1,133 @@
+import MiyaokaMori.Prelude
+import MiyaokaMori.AlgebraicGeometry.Proj.ProjectiveSpace.ProjectiveSpaceHyperplaneClosedImmersion
+import MiyaokaMori.AlgebraicGeometry.Proj.ProjectiveSpace.ProjectiveSpaceHyperplaneTwistPullback
+
+/-! # The hyperplane of projective space is a projective space of one dimension less
+
+The coordinate hyperplane `H = V_+(x_{m+1}) = Z(x_{m+1}) ⊂ P^{m+1}_K` (zero scheme of the section
+`x_{m+1} ∈ Γ(P^{m+1}, O(1))`) is isomorphic to `P^m_K` over `K`, and `O_{P^{m+1}}(1)` restricts to
+`O_{P^m}(1)` (Stacks 01MX/01MZ, Hartshorne II Ex. 3.12, Fulton Ex. 2.5.2).
+-/
+
+set_option autoImplicit false
+set_option maxHeartbeats 400000
+
+universe u v w u' v'
+
+open CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace
+open scoped AlgebraicGeometry
+
+noncomputable section
+
+namespace ProjBundleFiberDegreeOne
+
+open AlgebraicGeometry
+
+attribute [local instance] MvPolynomial.gradedAlgebra
+
+variable (K : Type u) [Field K] (m : ℕ)
+
+/-- The ideal sheaf of the coordinate hyperplane `V_+(x_{m+1}) ⊂ P^{m+1}_K`, i.e. the zero scheme of the
+section `x_{m+1}` of `O(1)` (`Scheme.idealSheafOfSection`). -/
+abbrev hyperplaneIdeal (K : Type u) [Field K] (m : ℕ) : (ProjectiveSpace (m + 1) K).IdealSheafData :=
+  Scheme.idealSheafOfSection (projectiveSpaceTwist K (m + 1) 1)
+    (projectiveSpaceCoordinate K (m + 1) (Fin.last (m + 1)))
+
+/-- Step 5: `j = Proj.map φ` is a morphism over `Spec K` (`AlgebraicGeometry.Proj.proj_map_toSpecZero`; `φ` is the identity on
+the degree-`0` part `K`). -/
+theorem hyperplaneMap_toSpecBase :
+    hyperplaneMap K m ≫ (ProjectiveSpace (m + 1) K ↘ Spec (CommRingCat.of K)) =
+      (ProjectiveSpace m K ↘ Spec (CommRingCat.of K)) := by
+  have hcoef : (hyperplaneGradedHom K m).gradedZeroRingHom.comp
+      (algebraMap K ((AlgebraicGeometry.Proj.projectiveGrading K (m + 1)) 0)) =
+      algebraMap K ((AlgebraicGeometry.Proj.projectiveGrading K m) 0) := by
+    apply RingHom.ext
+    intro r
+    apply Subtype.ext
+    change killLast K m (MvPolynomial.C r) = MvPolynomial.C r
+    simp [killLast, MvPolynomial.algebraMap_eq]
+  change Proj.map (hyperplaneGradedHom K m) _ ≫
+      (Proj.toSpecZero (AlgebraicGeometry.Proj.projectiveGrading K (m + 1)) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap K ((AlgebraicGeometry.Proj.projectiveGrading K (m + 1)) 0)))) = _
+  rw [← Category.assoc, AlgebraicGeometry.Proj.proj_map_toSpecZero, Category.assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp, hcoef]
+  rfl
+
+/-- **The coordinate hyperplane of `P^{m+1}` is `P^m`.** There is an isomorphism
+`e : P^m_K ≅ Z(x_{m+1})` compatible with the structure morphisms to `Spec K`
+(`e ≫ ι ≫ (P^{m+1} → Spec K) = (P^m → Spec K)`), and `(e ≫ ι)^* O_{P^{m+1}}(1) ≅ O_{P^m}(1)`.
+
+Source: Stacks 01MZ (`Proj (A/I) → Proj A` is a closed immersion, `I` homogeneous),
+Stacks 01MX (the comparison map `θ : ψ^*O_{Proj A}(1) → O_{Proj B}(1)` for a graded surjection
+`ψ : A → B` with `A`, `B` generated in degree `1` is an isomorphism), Hartshorne II Ex. 3.12(a),
+Fulton Ex. 2.5.2; formula (2.6) of the paper.
+
+Natural-language proof (all steps concrete, nothing needs the literature):
+1. Let `A = K[x_0, …, x_{m+1}]`, `B = K[y_0, …, y_m]` with the standard gradings
+   (`AlgebraicGeometry.Proj.projectiveGrading K (m+1)`, `AlgebraicGeometry.Proj.projectiveGrading K m`), and let
+   `φ : A → B` be the graded `K`-algebra map `x_i ↦ y_i` (`i ≤ m`, via `Fin.castSucc`), `x_{m+1} ↦ 0`
+   (`MvPolynomial.aeval (Fin.lastCases 0 X)`); it is surjective and homogeneous of degree `0`, so it is
+   a `GradedRingHom 𝒜 →+*ᵍ ℬ` with `irrelevant ℬ ≤ (irrelevant 𝒜).map φ` (every `y_i\) has a preimage).
+   Let `j = Proj.map φ : P^m → P^{m+1}` (Mathlib `AlgebraicGeometry.Proj.map`).
+2. `j` is a closed immersion: `φ` is surjective in every degree, so
+   `AlgebraicGeometry.Proj.isClosedImmersion_map` applies.
+3. `j.ker = hyperplaneIdeal K m` (ideal sheaves on `P^{m+1}`). Both are quasi-coherent ideal sheaves, so
+   by `IdealSheafData.ext_of_iSup_eq_top` it suffices to compare them on the affine cover
+   `D_+(x_i) = Spec A_{(x_i)}` (`projectiveSpace_iSup_basicOpen_X`, `Proj.isAffineOpen_basicOpen`).
+   * `j.ker.ideal (D_+(x_i)) = ker (A_{(x_i)} → B_{(φ x_i)})` (`Scheme.Hom.ker_apply` — `j` is
+     quasi-compact, being a closed immersion — together with the chart square `Proj.awayι_comp_map`).
+     For `i ≤ m` this kernel is the principal ideal `(x_{m+1}/x_i)`: an element `a/x_i^n`
+     (`a` homogeneous of degree `n`) maps to `0` iff `φ a = 0` iff `x_{m+1} ∣ a`
+     (`φ` is evaluation at `x_{m+1} = 0`, kernel `= (x_{m+1})`: `MvPolynomial` in the last variable,
+     `Polynomial.X_dvd_iff` after `MvPolynomial.finSuccEquiv`/`optionEquivLeft`), and then
+     `a/x_i^n = (x_{m+1}/x_i)·(a'/x_i^{n-1})`. For `i = m + 1`, `φ x_{m+1} = 0` so `B_{(0)} = 0` and the
+     kernel is everything: `D_+(x_{m+1}) ∩ H = ∅`, consistent with `x_{m+1}/x_{m+1} = 1\).
+   * `(hyperplaneIdeal K m).ideal (D_+(x_i))` is the ideal generated by the images of
+     `x_{m+1}|_{D_+(x_i)}` under all `O`-linear maps `Γ(O(1), D_+(x_i)) → Γ(O, D_+(x_i))`
+     (definition of `Scheme.idealSheafOfSection`). On `D_+(x_i)` the section `x_i` is a frame of `O(1)`
+     (`MiyaokaMori.WeightedJets.ProjTwisting.isFrame_homogeneousSection`), so `Γ(O(1), D_+(x_i))` is free of
+     rank one on `x_i`, `x_{m+1} = (x_{m+1}/x_i)·x_i`, and the ideal is `(x_{m+1}/x_i)` (for `i = m+1`:
+     the unit ideal). Hence the two ideals agree on every chart.
+4. Since `j` and `ι = (hyperplaneIdeal K m).subschemeι` are closed immersions with the same kernel
+   (`IdealSheafData.ker_subschemeι`), `e := IsClosedImmersion.lift ι j (le_of_eq …)` satisfies
+   `e ≫ ι = j` (`IsClosedImmersion.lift_fac`) and is an isomorphism (`IsClosedImmersion.isIso_lift`).
+5. Structure morphisms: `j ≫ Proj.toSpecZero 𝒜 = Proj.toSpecZero ℬ ≫ Spec.map (φ₀)`
+   (`AlgebraicGeometry.Proj.proj_map_toSpecZero`), and `φ₀ : 𝒜_0 → ℬ_0` is the identity of `K` (both are `K`), so
+   `e ≫ ι ≫ (P^{m+1} → Spec K) = j ≫ (P^{m+1} → Spec K) = (P^m → Spec K)`.
+6. Line bundles: `(e ≫ ι)^* O(1) = j^* O(1) ≅ O_{P^m}(1)` via the comparison map
+   `Proj.twistPullbackHom φ _ 1` (Stacks 01MX). It is an isomorphism because on every chart
+   `D_+(x_i)`, `i ≤ m`, both sides are free of rank one with frames `x_i` resp. `y_i`, and `θ` sends
+   `x_i ↦ y_i` (`Proj.twistToPushforward` is `Away.map φ` degreewise); the existing lemma
+   `Proj.isIso_twistPullbackHom_of_bijective` covers only bijective `φ`, and
+   `isIso_twistPullbackHom_of_isLocalizationAway` only open immersions, so this needs the stalk/chart
+   criterion for a **surjective** graded map (a new lemma; the local computation is the one in 3).
+
+Formalized exactly along these steps, in three helper modules:
+`ProjBundleFiberDegreeOne_HyperplaneIso_GradedMap` (step 1 and the kernel algebra `ker_awayMap_eq`),
+`ProjBundleFiberDegreeOne_HyperplaneIso_Ker` (steps 2–3: `hyperplaneMap`, `hyperplaneMap_ker`),
+`ProjBundleFiberDegreeOne_HyperplaneIso_Twist` (step 6: `isIso_twistPullbackHom_hyperplane`);
+steps 4–5 are assembled below (`hyperplaneMap_toSpecBase`). -/
+theorem projectiveSpace_hyperplane_iso (K : Type u) [Field K] (m : ℕ) :
+    ∃ e : ProjectiveSpace m K ≅ (hyperplaneIdeal K m).subscheme,
+      e.hom ≫ (hyperplaneIdeal K m).subschemeι ≫ (ProjectiveSpace (m + 1) K ↘ Spec (CommRingCat.of K)) =
+        (ProjectiveSpace m K ↘ Spec (CommRingCat.of K)) ∧
+      Nonempty (projectiveSpaceTwist K m 1 ≅
+        (Scheme.Modules.pullback (e.hom ≫ (hyperplaneIdeal K m).subschemeι)).obj
+          (projectiveSpaceTwist K (m + 1) 1)) := by
+  have := isClosedImmersion_hyperplaneMap K m
+  have hker : (hyperplaneIdeal K m).subschemeι.ker = (hyperplaneMap K m).ker := by
+    rw [Scheme.IdealSheafData.ker_subschemeι, hyperplaneMap_ker]
+  have := IsClosedImmersion.isIso_lift (hyperplaneIdeal K m).subschemeι (hyperplaneMap K m) hker
+  have hfac : (asIso (IsClosedImmersion.lift (hyperplaneIdeal K m).subschemeι (hyperplaneMap K m) hker.le)).hom ≫
+      (hyperplaneIdeal K m).subschemeι = hyperplaneMap K m := by
+    rw [asIso_hom, IsClosedImmersion.lift_fac]
+  refine ⟨asIso (IsClosedImmersion.lift (hyperplaneIdeal K m).subschemeι (hyperplaneMap K m) hker.le), ?_, ?_⟩
+  · rw [← Category.assoc, hfac]
+    exact hyperplaneMap_toSpecBase K m
+  · exact ⟨((Scheme.Modules.pullbackCongr hfac).app (projectiveSpaceTwist K (m + 1) 1) ≪≫
+      @asIso _ _ _ _ (Proj.twistPullbackHom (hyperplaneGradedHom K m) (irrelevant_le_map_hyperplaneGradedHom K m) 1)
+        (isIso_twistPullbackHom_hyperplane K m)).symm⟩
+
+end ProjBundleFiberDegreeOne
+
+end

@@ -1,0 +1,24 @@
+name = "MiyaokaMori"
+defaultTargets = ["MiyaokaMori"]
+
+[leanOptions]
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "0df444a"
+
+# The formalization: every module under `MiyaokaMori/`.
+[[lean_lib]]
+name = "MiyaokaMori"
+roots = ["MiyaokaMori"]
+globs = ["MiyaokaMori.+"]
+
+# Lean comparator (https://github.com/leanprover/comparator): `Challenge` states the results with `sorry`,
+# `Solution` imports the proofs; see comparator.json.
+[[lean_lib]]
+name = "Challenge"
+
+[[lean_lib]]
+name = "Solution"
