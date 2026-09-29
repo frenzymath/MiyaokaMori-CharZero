@@ -26,7 +26,9 @@ The library is organized by topic: `MiyaokaMori/Paper/` holds the arguments spec
 
 ## SHEAF
 
-The formalization was produced by **SHEAF** (Scalable Hierarchical Engine for Autonomous Formalization), a system of autonomous agents that unfolds a paper into a dependency graph of statements, formalizes the statements first, and then proves them while pruning every part of the graph that the formal proof does not need. SHEAF will be released at <https://github.com/frenzymath/SHEAF>.
+The formalization was produced by **SHEAF** (Scalable Hierarchical Engine for Autonomous Formalization), a system of autonomous agents that unfolds a paper into a dependency graph of statements, formalizes the statements first, and then proves them while pruning every part of the graph that the formal proof does not need. SHEAF is available at <https://github.com/frenzymath/SHEAF>.
+
+When the dependency graph of the paper is unfolded completely, down to Mathlib, it has 1,706 nodes that are not in Mathlib. This formalization uses 639 of them. The other 1,067, which is 62.5%, were pruned and never proved. (These numbers differ from those in the paper. In the graph examined for the paper, a branch could end either in Mathlib or in the code already written for the earlier Danus paper, so it did not go all the way down to Mathlib. Afterwards we unfolded the graph completely, down to Mathlib, and that gave the numbers here.)
 
 ## Checking the results with Lean comparator
 
